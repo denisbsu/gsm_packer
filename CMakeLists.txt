@@ -27,6 +27,8 @@ link_directories(${Boost_LIBRARY_DIRS})
 
 list(APPEND gsm_packer_sources
     stream2burst_impl.cc
+    cyclic_buffer.cc
+    buffer_delegate_impl.cc
 )
 
 set(gsm_packer_sources "${gsm_packer_sources}" PARENT_SCOPE)
