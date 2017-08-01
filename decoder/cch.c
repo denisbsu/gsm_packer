@@ -425,10 +425,10 @@ static unsigned char *decode_sacch(GS_CTX *ctx, unsigned char *burst, unsigned i
 			errors = 0;
 		}
 	}
-
+/*
 	if (errors)
 		printf("WRN: errors=%d fn=%d\n", errors, ctx->fn);
-
+*/
 	if((len = compress_bits(ctx->msg, data_size, decoded_data,
 	   DATA_BLOCK_SIZE)) < 0) {
 		fprintf(stderr, "error: compress_bits\n");

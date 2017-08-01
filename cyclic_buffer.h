@@ -14,7 +14,8 @@ public:
 
   cyclic_buffer(int len);
   void add_item(int item);
-  int *copy_packet(int offset = 0);
+  unsigned char *copy_packet(int offset = 0);
+  int copy_packet_to_buffer(int offset, unsigned char *buffer, int len);
   int find_offset_for_sequence (int *seq, int len);
   virtual ~cyclic_buffer();
 };

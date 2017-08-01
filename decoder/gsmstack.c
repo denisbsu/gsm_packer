@@ -296,15 +296,32 @@ GS_process(GS_CTX *ctx, int ts, int type, const unsigned char *src, int fn, int 
 			return 0;
 
 		ts_ctx->burst_count = 0;
-		DEBUGF("TRY TS %d\n", ts);
+		//DEBUGF("TRY TS %d\n", ts);
 		data = decode_cch(ctx, ts_ctx->burst, &len);
 		if (data == NULL) {
+			//return -1;
 			DEBUGF("cannot decode fnr=0x%06x (%6d) ts=%d\n", ctx->fn, ctx->fn, ts);
-			return -1;
-		}
-		DEBUGF("OK TS %d, len %d\n", ts, len);
+			for (int failed_burst = 0; failed_burst < 4; ++failed_burst) {
+				for (int i = (116 - 1); i >= 0; --i) {
+					ts_ctx->burst[116 * failed_burst + i] = ts_ctx->burst[116 * failed_burst + i] ? 0 : 1;
+					data = decode_cch(ctx, ts_ctx->burst, &len);
+					if (data) break;
+				}
+				if (data) break;
+				else {
+					for (int i = (116 - 1); i >= 0; --i) {
+						ts_ctx->burst[116 * failed_burst + i] = ts_ctx->burst[116 * failed_burst + i] ? 0 : 1;
+					}					
+				}
+			}
 
-		out_gsmdecode(0, 0, ts, ctx->fn, data, len);
+			if (!data) {
+				return -1;
+			}
+		}
+		//DEBUGF("OK TS %d, len %d\n", ts, len);
+
+		//out_gsmdecode(0, 0, ts, ctx->fn, data, len);
 
 		if (ctx->gsmtap_inst) {
 			/* Dieter: set channel type according to configuration */

@@ -27,12 +27,14 @@
 #include "gsm_constants.h"
 #include "cyclic_buffer.h"
 #include "buffer_delegate_impl.h"
+#include "gsm_preprocessor.h"
 
 
 const int packet_len = 156;
 
 
 cyclic_buffer *test_buffer;
+gsm_preprocessor *preprocessor;
 
 
 
@@ -52,6 +54,8 @@ namespace gr {
       return gnuradio::get_initial_sptr
         (new stream2burst_impl());
     }
+
+    void buffer_callback(unsigned char *, char *);
 
     /*
      * The private constructor
@@ -95,33 +99,51 @@ namespace gr {
       delegate->patterns_lens = new int[delegate->patterns_num];
       delegate->patterns_names = new char*[delegate->patterns_num];
       delegate->patterns_offsets = new int[delegate->patterns_num];
+      delegate->patterns_mask = new int[delegate->patterns_num];
 
       delegate->patterns[0] = freq_sync;
       delegate->patterns_lens[0] = freq_sync_len;
       delegate->patterns_names[0] = (char *)"FREQ";
       delegate->patterns_offsets[0] = 1;
+      delegate->patterns_mask[0] = 1;
 
       delegate->patterns[1] = encoded_sync;
       delegate->patterns_lens[1] = encoded_sync_len;
       delegate->patterns_names[1] = (char *)"SYNC";
       delegate->patterns_offsets[1] = 43;
+      delegate->patterns_mask[1] = 1;
 
 
-      for (int i = 0; i < TRAIN_SEQ_NUM; ++i) {
+      for (int i = 0; i < TRAIN_SEQ_NUM /*- 1*/; ++i) {
         delegate->patterns[i + 2] = encoded_train[i];
         delegate->patterns_lens[i + 2] = N_TRAIN_BITS - 1;
         delegate->patterns_names[i + 2] = (char *)"TRAIN";
         delegate->patterns_offsets[i + 2] = 62;
+        delegate->patterns_mask[i + 2] = 1;
       }
-
+      /*
+        delegate->patterns[TRAIN_SEQ_NUM + 1] = encoded_train[TRAIN_SEQ_NUM - 1];
+        delegate->patterns_lens[TRAIN_SEQ_NUM + 1] = N_TRAIN_BITS - 1;
+        delegate->patterns_names[TRAIN_SEQ_NUM + 1] = (char *)"DUMMY";
+        delegate->patterns_offsets[TRAIN_SEQ_NUM + 1] = 62;
+        delegate->patterns_mask[TRAIN_SEQ_NUM + 1] = 1;
+*/
       delegate->patterns[TRAIN_SEQ_NUM + 2] = NULL;
       delegate->patterns_lens[TRAIN_SEQ_NUM + 2] = 0;
       delegate->patterns_names[TRAIN_SEQ_NUM + 2] = (char *)"UNKNOWN";
       delegate->patterns_offsets[TRAIN_SEQ_NUM + 2] = 0;
-
+      delegate->patterns_mask[TRAIN_SEQ_NUM + 2] = 1;
+      delegate->callback = buffer_callback;
 
       test_buffer->delegate = delegate;
 
+      preprocessor = new gsm_preprocessor();
+      preprocessor->delegate = delegate;
+
+    }
+
+    void buffer_callback(unsigned char *buffer, char *type) {
+      preprocessor->prepare_frame(buffer, type);
     }
 
     /*
@@ -161,7 +183,7 @@ static int packet_buffer[packet_len];
           return 0;
         }
         
-        printf("%d\n", input_len);
+        //printf("%d\n", input_len);
         /*
         for (int i = 0; i < input_len; ++i) {
           printf("%d ", in[i]);
@@ -182,6 +204,7 @@ static int packet_buffer[packet_len];
         for (int i = 0; i < input_len; ++i) {
           new_item = !in[i];
           test_buffer -> add_item(new_item);
+          continue;
 
 
           switch (state) {

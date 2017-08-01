@@ -23,12 +23,18 @@
 include(GrPlatform) #define LIB_SUFFIX
 
 include_directories(${Boost_INCLUDE_DIR})
-link_directories(${Boost_LIBRARY_DIRS})
+link_directories(${Boost_LIBRARY_DIRS} /opt/local/lib)
 
 list(APPEND gsm_packer_sources
     stream2burst_impl.cc
     cyclic_buffer.cc
     buffer_delegate_impl.cc
+    gsm_preprocessor.cc
+    decoder/sch.c
+    decoder/gsmstack.c
+    decoder/cch.c
+    decoder/fire_crc.c
+    decoder/interleave.c
 )
 
 set(gsm_packer_sources "${gsm_packer_sources}" PARENT_SCOPE)
@@ -38,7 +44,7 @@ if(NOT gsm_packer_sources)
 endif(NOT gsm_packer_sources)
 
 add_library(gnuradio-gsm_packer SHARED ${gsm_packer_sources})
-target_link_libraries(gnuradio-gsm_packer ${Boost_LIBRARIES} ${GNURADIO_ALL_LIBRARIES})
+target_link_libraries(gnuradio-gsm_packer osmocore ${Boost_LIBRARIES} ${GNURADIO_ALL_LIBRARIES})
 set_target_properties(gnuradio-gsm_packer PROPERTIES DEFINE_SYMBOL "gnuradio_gsm_packer_EXPORTS")
 
 if(APPLE)
